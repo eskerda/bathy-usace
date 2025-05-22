@@ -56,6 +56,31 @@ EOF
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+
+## Download surveys
+
+Get a list of URLs from the survey data csv.
+
+```bash
+duckdb -noheader -list \
+       -c "select sourcedatalocation from read_csv('surveys.csv') where channelareaidfk LIKE '%JI_01%'" \
+        > urls.txt
+```
+
+Download all zips
+
+```bash
+cat urls.txt | parallel --bar -j 10 'curl -s -L --create-dirs -o surveys/{/} {}'
+```
+
+** Bonus ** no need to create a txt
+
+```bash
+duckdb -noheader -list \
+       -c "select sourcedatalocation from read_csv('surveys.csv') where channelareaidfk LIKE '%JI_01%'" \
+        | parallel --bar -j 10 'curl -s -L --create-dirs -o surveys/{/} {}'
+```
+
 ## Visualize XYZ USACE survey
 
 This part is useful to inspect the data and make some sense out of it using
