@@ -18,4 +18,4 @@ preview: sample output.tif out_lines.shp out_poly.shp
 
 .PHONY: clean
 clean:
-	rm -rf *.shp *.shx *.dbf *.prj *.tif sample
+	rm -rf *.shp *.shx *.dbf *.prj *.tif
