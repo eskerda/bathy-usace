@@ -1,61 +1,60 @@
-Challenge - Bathymetry
-=====
+# USACE Bathymetry ingestion pipeline
 
-Marine maps are a core component of the Orca experience, with bathymetry (underwater topography) being a key feature. Orca sources bathymetry data from various hydrographic offices (HOs) such as NOAA[1]. However, the quality of this data varies based on coverage, resolution, and freshness.
+## Generate a CSV of USACE surveys feature data from arcgis
 
-The US Army Corps of Engineers (USACE)[2] provides high-resolution, up-to-date bathymetric survey data, including Digital Elevation Models (DEMs) from multibeam sonar surveys. While USACE also provides contour polygons, these are often jagged and not ideal for visualization.
+Get survey information from USACE arcgis website as CSV.
 
+```bash
+python surveys.py > surveys.csv
+```
 
-Task
------
+To get a subset of it, run it like
 
-Your task is to build an **end-to-end** solution that processes DEM data from USACE, generates smoothed bathymetric contours, and displays these contours on a vector map.
+```bash
+python surveys.py --query "(usacedistrictcode='CENAN') AND (channelareaidfk='CENAN_JI_01_INL')" > surveys.JI_01.csv
+```
 
+Now you can query relevant information with any CSV tool
 
-Details
------
+```bash
+duckdb << EOF
+   select channelareaidfk,
+          surveyjobidpk,
+          sourcedatalocation,
+          sourceprojection,
+          dateuploaded
+   from read_csv('surveys.csv')
+   where channelareaidfk LIKE '%JI_01%'
+   order by dateuploaded
+EOF
+```
 
-Your solution should include the following key elements:
-
-1. #### Data Download
-   - Retrieve a small subset of **USACE survey data** (e.g., DEM files for a specific region).
-
-2. #### Data Processing
-   - Process the **DEM** data to generate **smoothed contour polygons** at reasonable depth intervals (e.g., 0m, 0.5m, 1m, 2m, 5m, 10m).
-   - USACE hydro survey data contains DEMs and processed contour polygons. We don’t want their contour polygons as they are jagged in many cases. Come up with a way to produce non-jagged contours from the DEMs.
-   - Store the processed bathymetry contours in a **PostGIS database**.
-
-3. #### Vector Tile Serving
-
-   - Serve the bathymetric contours as **Mapbox Vector Tiles (MVT)** directly from the PostGIS database.
-
-4. #### Map Visualization
-
-   - Create a web-based map using **Mapbox GL-JS** or **MapLibre GL-JS**.
-   - Add a bathymetry layer styled in shades of blue to represent different depth intervals.
-   - Overlay this layer on a default Mapbox basemap.
-
-
-Notes
------
-- We value **simplicity** and **elegance** as opposed to over-engineering. Focus on **functional**, **efficient** solutions over perfect code quality.
-- You are encouraged to **use existing tools and libraries** to focus on solving the core problem efficiently. Document tool choices and rationale in the README.
-- The solution should demonstrate **reasonable performance** in generating contours from the DEM data, generating vector tiles from the contour polygons and loading and rendering the map.
-- Provide **basic documentation** in the form of a **README file** with clear setup and execution instructions (dependencies, database setup, configs, etc.).
-- Include strategies (if applicable) for optimizing processing workflows (e.g., leveraging PostGIS functions, batch processing).
-
-
-Deliverable
------
-1. **Code Repository**: Preferably a GitHub repository.
-2. **Video Demo**: A short video demonstrating how the solution works end-to-end including the final map visualization.
-
-
-References
------
-
-- [1] https://www.ncei.noaa.gov/products/bathymetry
-- [2] https://www.mvr.usace.army.mil/Missions/Navigation/Hydrographic-Surveys/
+```
+┌─────────────────┬─────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────┬───────────────┐
+│ channelareaidfk │              surveyjobidpk              │                                               sourcedatalocation                                                │                    sourceprojection                     │ dateuploaded  │
+│     varchar     │                 varchar                 │                                                     varchar                                                     │                         varchar                         │     int64     │
+├─────────────────┼─────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────┼───────────────┤
+│ CENAN_JI_01_INL │ JI_01_INL_20190418_OT_4823_45           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20190418_OT_4823_45.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1577786790000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20190429_CS_4820_45           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20190429_CS_4820_45.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1577787038000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20170326_CS_4678_25           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20170326_CS_4678_25.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1577787274000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20160316_CS_4449_25           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20160316_CS_4449_25.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1577799892000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20150313_CS_4287_25           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20150313_CS_4287_25.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1577800130000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20140609_CS_4120_25           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20140609_CS_4120_25.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1577961696000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20170330_CS_4588_25           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20170330_CS_4588_25.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1577961980000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20200303_OT_4918_45           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20200303_OT_4918_45.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1585233130000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20210113_OT_5008_30           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20210113_OT_5008_30.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1612770912000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20210601_CS_5046_45           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20210601_CS_5046_45.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1623141264000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20220322_OT_5155_45           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20220322_OT_5155_45.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1649342170000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20220510_OT_5173_45           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20220510_OT_5173_45.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1652695282000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20221006_BD_5226_45           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20221006_BD_5226_45.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1666182102000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20221117_AD_5239_45           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/JI_01_INL_20221117_AD_5239_45.ZIP           │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1669118610000 │
+│ CENAN_JI_01_INL │ CENAN_DIS_JI_01_INL_20230503_CS_5283_45 │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/CENAN_DIS_JI_01_INL_20230503_CS_5283_45.ZIP │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1683705566000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20240425_CS_5429_60           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/CENAN_DIS_JI_01_INL_20240425_CS_5429_60.ZIP │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1714992038000 │
+│ CENAN_JI_01_INL │ JI_01_INL_20250501_CS_5560_60           │ https://ehydroprod.blob.core.usgovcloudapi.net/ehydro-surveys/CENAN/CENAN_DIS_JI_01_INL_20250501_CS_5560_60.ZIP │ NAD_1983_StatePlane_New_York_Long_Island_FIPS_3104_Feet │ 1746627940000 │
+├─────────────────┴─────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────┴───────────────┤
+│ 17 rows                                                                                                                                                                                                                                     5 columns │
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 # NOTES
 
