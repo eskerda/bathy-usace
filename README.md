@@ -191,9 +191,26 @@ Start a development server with
 npm run dev
 ```
 
-# NOTES
+## NOTES
 
 * https://abelvm.github.io/sql/contour/
 * https://epsg4253.wordpress.com/2013/02/08/building-contour-elevation-lines-with-gdal-and-postgis/
 * https://postgis.net/docs/RT_reference.html
 * https://gist.github.com/philippkraft/2da0ab4314dd334463fe0e04985bba32
+
+## References
+
+```
+@software{tange_2024_14207479,
+      author       = {Tange, Ole},
+      title        = {GNU Parallel 20241122 ('Ahoo Daryaei')},
+      month        = Nov,
+      year         = 2024,
+      note         = {{GNU Parallel is a general parallelizer to run
+                       multiple serial command line programs in parallel
+                       without changing them.}},
+      publisher    = {Zenodo},
+      doi          = {10.5281/zenodo.14207479},
+      url          = {https://doi.org/10.5281/zenodo.14207479}
+}
+```
