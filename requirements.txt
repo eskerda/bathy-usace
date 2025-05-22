@@ -1,0 +1,8 @@
+requests
+tqdm
+pandas
+matplotlib
+scipy
+alphashape
+rasterio
+geopandas
