@@ -1,4 +1,5 @@
 sample:
+	# XXX Make it so incomplete downloads can be resumed
 	duckdb	-noheader -list \
 		-c "select sourcedatalocation from read_csv('surveys.sample.csv')" \
 		| parallel --bar -j 10 'curl -s -L --create-dirs -o sample/{/} {}'
@@ -13,12 +14,15 @@ out_lines.shp: output.tif
 out_poly.shp: output.tif
 	gdal_contour -amin depth_min -amax depth_max -p -fl -10 -5 -4 -3 -2 -1 -0.5 0 output.tif out_poly.shp
 
+.PHONY: contours
+contours: out_lines.shp out_poly.shp
+
 .PHONY: preview
-preview: sample output.tif out_lines.shp
+preview: output.tif out_lines.shp
 	python tiffpl.py output.tif out_lines.shp
 
 .PHONY: preview-poly
-preview-poly: sample output.tif out_poly.shp
+preview-poly: output.tif out_poly.shp
 	python tiffpl.py output.tif out_poly.shp
 
 .PHONY: clean
