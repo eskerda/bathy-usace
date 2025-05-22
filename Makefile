@@ -1,10 +1,11 @@
 sample:
-	duckdb -noheader -list \
-	       -c "select sourcedatalocation from read_csv('surveys.sample.csv')" \
+	duckdb	-noheader -list \
+		-c "select sourcedatalocation from read_csv('surveys.sample.csv')" \
 		| parallel --bar -j 10 'curl -s -L --create-dirs -o sample/{/} {}'
+	cd sample; unzip -j '*.ZIP' "*.XYZ" -x "*FULL.XYZ" -d data
 
 output.tif: sample
-	python totiff.py $$(find ./sample -type f -name '*.XYZ' ! -name '*_FULL.XYZ')
+	python totiff.py $$(find ./sample/data -type f -name '*.XYZ' ! -name '*_FULL.XYZ')
 
 out_lines.shp: output.tif
 	gdal_contour -a depth -fl -10 -5 -4 -3 -2 -1 -0.5 0 output.tif out_lines.shp
