@@ -1,2 +1,8 @@
 surveys
 surveys.csv
+*.tif
+*.tiff
+*.dbf
+*.shp
+*.shx
+*.prj
