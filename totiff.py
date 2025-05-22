@@ -38,7 +38,7 @@ def point_in_poly_mask(points, polygon):
 files = sys.argv[1:]
 
 df = pd.concat(
-    (pd.read_csv(f, delim_whitespace=True, names=["x", "y", "z"]) for f in files)
+    (pd.read_csv(f, sep=r'\s+', names=["x", "y", "z"]) for f in files)
 )
 
 import pandas as pd
