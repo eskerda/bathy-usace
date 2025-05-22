@@ -1,5 +1,7 @@
 import sys
 
+from warnings import warn
+
 import alphashape
 import rasterio
 
@@ -34,12 +36,24 @@ def point_in_poly_mask(points, polygon):
         )
 
 
+# XXX meh
+def naive_read_csv(path, * args, ** kwargs):
+    with open(path) as f:
+        line = f.readline()
+        if ',' in line:
+            warn("%s is comma separated" % path)
+            sep = ','
+        elif ' ' in line:
+            sep = r'\s+'
+        else:
+            raise ValueError("Unknown delimiter")
+    return pd.read_csv(path, sep=sep, * args, ** kwargs)
+
+
 # Load XYZ
 files = sys.argv[1:]
 
-df = pd.concat(
-    (pd.read_csv(f, sep=r'\s+', names=["x", "y", "z"]) for f in files)
-)
+df = pd.concat((naive_read_csv(f, names=["x", "y", "z"]) for f in files))
 
 import pandas as pd
 import geopandas as gpd
