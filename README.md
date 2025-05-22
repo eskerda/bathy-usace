@@ -66,7 +66,7 @@ pandas and matplotlib
 python process.py JI_01_INL_20250501_CS_5560_60.XYZ
 ```
 
-<img width="531" alt="image" src="https://gist.github.com/user-attachments/assets/69d7d889-85bf-4638-995d-113896368518" />
+<img width="531" alt="image" src="https://github.com/user-attachments/assets/7ff42af1-883b-474e-baba-c7e14f0cdca2" />
 
 
 ## Generate a tiff out of a XYZ USACE survey
@@ -90,9 +90,18 @@ gdal_contour -a depth \
              output.tif out_lines.shp
 
 gdal_contour -amin depth_min -amax depth_max \
+             -p \
              -fl -10 -5 -4 -3 -2 -1 -0.5 0 \
              output.tif out_poly.shp
 ```
+
+## Visualize tiff and contours
+
+```bash
+python tiffpl.py output.tif out_lines.shp
+```
+
+<img width="698" alt="image" src="https://github.com/user-attachments/assets/754ff612-9e29-4945-8091-a45585481407" />
 
 ## Store contours in postgis
 
@@ -108,7 +117,7 @@ ogr2ogr -f "PostgreSQL" PG:"host=localhost dbname=orca user=postgres" \
 
 # NOTES
 
-https://abelvm.github.io/sql/contour/
-https://epsg4253.wordpress.com/2013/02/08/building-contour-elevation-lines-with-gdal-and-postgis/
-https://postgis.net/docs/RT_reference.html
-https://gist.github.com/philippkraft/2da0ab4314dd334463fe0e04985bba32
+* https://abelvm.github.io/sql/contour/
+* https://epsg4253.wordpress.com/2013/02/08/building-contour-elevation-lines-with-gdal-and-postgis/
+* https://postgis.net/docs/RT_reference.html
+* https://gist.github.com/philippkraft/2da0ab4314dd334463fe0e04985bba32
