@@ -56,6 +56,56 @@ EOF
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+## Visualize XYZ USACE survey
+
+This part is useful to inspect the data and make some sense out of it using
+pandas and matplotlib
+
+
+```bash
+python process.py JI_01_INL_20250501_CS_5560_60.XYZ
+```
+
+<img width="531" alt="image" src="https://gist.github.com/user-attachments/assets/69d7d889-85bf-4638-995d-113896368518" />
+
+
+## Generate a tiff out of a XYZ USACE survey
+
+
+```bash
+python totiff.py JI_01_INL_20250501_CS_5560_60.XYZ
+```
+
+Multiple XYZ files can be processed by
+
+```bash
+python totiff.py *.XYZ
+```
+
+## Generate contours using gdal
+
+```bash
+gdal_contour -a depth \
+             -fl -10 -5 -4 -3 -2 -1 -0.5 0 \
+             output.tif out_lines.shp
+
+gdal_contour -amin depth_min -amax depth_max \
+             -fl -10 -5 -4 -3 -2 -1 -0.5 0 \
+             output.tif out_poly.shp
+```
+
+## Store contours in postgis
+
+```bash
+ogr2ogr -f "PostgreSQL" PG:"host=localhost dbname=orca user=postgres" \
+        -nln bathy -nlt MULTILINESTRING \
+        out_lines.shp
+
+ogr2ogr -f "PostgreSQL" PG:"host=localhost dbname=orca user=postgres" \
+        -nln bathy_pol -nlt MULTIPOLYGON \
+        out_poly.shp
+```
+
 # NOTES
 
 https://abelvm.github.io/sql/contour/
