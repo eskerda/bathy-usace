@@ -128,7 +128,29 @@ python tiffpl.py output.tif out_lines.shp
 
 <img width="698" alt="image" src="https://github.com/user-attachments/assets/754ff612-9e29-4945-8091-a45585481407" />
 
-## Store contours in postgis
+## Contours in PostGIS
+
+### Run a postgis instance
+
+```bash
+docker run --rm -it \
+           -e POSTGRES_HOST_AUTH_METHOD=trust \
+           -e PGDATA=/var/lib/postgresql/data/pgdata \
+           -v pgdata:/var/lib/postgresql/data \
+           --name postgis -p 5432:5432 -d postgis/postgis
+```
+
+> **_NOTE:_**  postgis still has no arm64 image available so on apple silicon
+> you will need to build the image locally. Make sure to increase the docker
+> memory limit when building.
+
+```bash
+git clone git@github.com:postgis/docker-postgis.git
+cd docker-postgis/17-master
+docker build -t local/postgis .
+```
+
+### Store contours in postgis
 
 ```bash
 ogr2ogr -f "PostgreSQL" PG:"host=localhost dbname=orca user=postgres" \
@@ -138,6 +160,35 @@ ogr2ogr -f "PostgreSQL" PG:"host=localhost dbname=orca user=postgres" \
 ogr2ogr -f "PostgreSQL" PG:"host=localhost dbname=orca user=postgres" \
         -nln bathy_pol -nlt MULTIPOLYGON \
         out_poly.shp
+```
+
+
+## Run www map visualization
+
+### Start martin for tile serving
+
+```bash
+docker run -p 3000:3000 -e RUST_LOG=debug \
+           -e DATABASE_URL=postgresql://postgres@host.docker.internal/orca \
+           -v ./martin:/tmp/shared/ \
+           --name martin --rm \
+           ghcr.io/maplibre/martin
+```
+
+### Build website and serve
+
+```bash
+cd www
+npm i
+npm run build
+npm run preview
+open http://localhost:4173/
+```
+
+Start a development server with
+
+```bash
+npm run dev
 ```
 
 # NOTES

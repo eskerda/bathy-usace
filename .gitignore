@@ -6,3 +6,4 @@ surveys.csv
 *.shp
 *.shx
 *.prj
+pgdata
