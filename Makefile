@@ -14,8 +14,12 @@ out_poly.shp: output.tif
 	gdal_contour -amin depth_min -amax depth_max -p -fl -10 -5 -4 -3 -2 -1 -0.5 0 output.tif out_poly.shp
 
 .PHONY: preview
-preview: sample output.tif out_lines.shp out_poly.shp
-	python tiffpl.py output.tif out_lines.shp out_poly.shp
+preview: sample output.tif out_lines.shp
+	python tiffpl.py output.tif out_lines.shp
+
+.PHONY: preview-poly
+preview-poly: sample output.tif out_poly.shp
+	python tiffpl.py output.tif out_poly.shp
 
 .PHONY: clean
 clean:
