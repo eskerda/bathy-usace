@@ -35,13 +35,33 @@ def naive_read_csv(path, * args, ** kwargs):
     return pd.read_csv(path, sep=sep, * args, ** kwargs)
 
 
+def preview(df, xi, yi, zi, args, ** kwargs):
+    import matplotlib.pyplot as plt
+
+    # Maybe try log. steps or something more visually interesting ?
+    levels = None
+
+    # Plot
+    plt.figure(figsize=(8, 6))
+    plt.scatter(df["x"], df["y"], c=df["z"], s=0.1, marker=',', alpha=0.4)
+    CS = plt.contour(xi, yi, zi, levels=levels, colors="black", linestyles="solid", linewidths=0.8, alpha=0.5, ) # , cmap="Blues")
+    plt.clabel(CS, inline=True, fontsize=6, inline_spacing=0.1)
+    plt.imshow(zi, extent=(xi.min(), xi.max(), yi.min(), yi.max()), cmap="Blues_r", alpha=0.8,)
+    # plt.title(f"Bathymetry Contours ({INTP} - {GRID_RES})")
+    plt.colorbar(label="Depth")
+
+    if args.outfile:
+        plt.savefig(args.outfile, dpi=300)
+    else:
+        plt.show()
+
+
 def main(args):
     GRID_RES = args.grid_res
     HULL_ALPHA = args.hull_alpha
     HULL_BUFFER = args.hull_buffer
     G_SMOOTH = args.g_smooth
     files = args.files
-    output = args.outfile
 
     df = pd.concat((naive_read_csv(f, names=["x", "y", "z"]) for f in files))
 
@@ -78,6 +98,9 @@ def main(args):
     zi = np.where(mask, zi, np.nan)
     ###################################################################
 
+    if args.preview:
+        return preview(** locals())
+
     # Save as GeoTIFF
     xmin, xmax = xi.min(), xi.max()
     ymin, ymax = yi.min(), yi.max()
@@ -87,7 +110,7 @@ def main(args):
     )
 
     with rasterio.open(
-        output,
+        args.outfile or "output.tif",
         "w",
         driver="GTiff",
         height=height,
@@ -108,7 +131,7 @@ if __name__ == "__main__":
     parser.add_argument('--hull-alpha', dest='hull_alpha', default=HULL_ALPHA, type=float)
     parser.add_argument('--hull-buffer', dest='hull_buffer', default=HULL_BUFFER, type=float)
     parser.add_argument('--g-smooth-sigma', dest='g_smooth', default=G_SMOOTH, type=float)
-    parser.add_argument('-o', dest='outfile', help='output file', default='output.tif')
+    parser.add_argument('-o', dest='outfile', help='output file')
 
     args = parser.parse_args()
 

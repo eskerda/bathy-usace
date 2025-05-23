@@ -115,7 +115,7 @@ pandas and matplotlib
 
 
 ```bash
-python process.py JI_01_INL_20250501_CS_5560_60.XYZ
+python totiff.py JI_01_INL_20250501_CS_5560_60.XYZ --preview
 ```
 
 <img width="531" alt="image" src="https://github.com/user-attachments/assets/7ff42af1-883b-474e-baba-c7e14f0cdca2" />
