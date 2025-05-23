@@ -9,10 +9,8 @@ import alphashape
 
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 import rasterio.transform as rio_transform
 
-from pyproj import CRS
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter
 
@@ -21,9 +19,6 @@ GRID_RES = 25  # meters
 HULL_ALPHA = 0.01
 HULL_BUFFER = GRID_RES
 G_SMOOTH = 1.3
-
-IN_CRS = 'EPSG:2263'
-OUT_CRS = 'EPSG:3857'
 
 
 # XXX meh
@@ -41,8 +36,6 @@ def naive_read_csv(path, * args, ** kwargs):
 
 
 def main(args):
-    IN_CRS = args.in_crs
-    OUT_CRS = args.out_crs
     GRID_RES = args.grid_res
     HULL_ALPHA = args.hull_alpha
     HULL_BUFFER = args.hull_buffer
@@ -51,14 +44,6 @@ def main(args):
     output = args.outfile
 
     df = pd.concat((naive_read_csv(f, names=["x", "y", "z"]) for f in files))
-
-    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['x'], df['y']), crs=IN_CRS)
-    # Reproject
-    gdf_proj = gdf.to_crs(OUT_CRS)
-
-    # Replace x, y with reprojected values
-    df['x'] = gdf_proj.geometry.x
-    df['y'] = gdf_proj.geometry.y
 
     # feet to meters
     df["z"] = df["z"] * 0.3048
@@ -109,7 +94,7 @@ def main(args):
         width=width,
         count=1,
         dtype=zi.dtype,
-        crs=args.out_crs,
+        crs=None,
         transform=transform,
     ) as dst:
         dst.write(zi, 1)
@@ -119,8 +104,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('files', nargs='+')
     parser.add_argument('--preview', action='store_true', default=False)
-    parser.add_argument('--in-crs', dest='in_crs', default=IN_CRS)
-    parser.add_argument('--out-crs', dest='out_crs', default=OUT_CRS)
     parser.add_argument('--grid-res', dest='grid_res', default=GRID_RES)
     parser.add_argument('--hull-alpha', dest='hull_alpha', default=HULL_ALPHA, type=float)
     parser.add_argument('--hull-buffer', dest='hull_buffer', default=HULL_BUFFER, type=float)
