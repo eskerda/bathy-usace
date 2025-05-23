@@ -13,7 +13,7 @@ PAGE_SIZE = 100
 ENDPOINT = "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/arcgis/rest/services/eHydro_Survey_Data/FeatureServer/0/query"
 
 
-def arcgis_q(query="1=1", offset=0, count=100, **kwargs):
+def arcgis_q(query, offset=0, count=100, **kwargs):
     args = {
         "f": "json",
         "resultOffset": offset,
@@ -45,15 +45,7 @@ def main(args, extra):
 
     writer = csv.DictWriter(out or sys.stdout, fieldnames={})
 
-    queries = []
-    if args.query:
-        queries.append(f"({args.query})")
-    if args.district:
-        queries.append(f"(usacedistrictcode='{args.district}')")
-    if args.channel:
-        queries.append(f"(channelareaidfk='{args.channel}')")
-    query = ' AND '.join(queries)
-    query = query or "1=1"
+    query = args.query or "1=1"
 
     total = arcgis_q_count(query, ** extra)
     total = min(args.total or total, total)
@@ -82,8 +74,6 @@ if __name__ == "__main__":
     parser.add_argument('-o', dest='outfile', help='CSV output file (stdout)')
     parser.add_argument('-n', dest='total', help='limit to N surveys', default=0, type=int)
     parser.add_argument('--query', dest='query', help='ArcGIS filter query')
-    parser.add_argument('--district', dest='district', help='filter by district code (ex: CENAN)')
-    parser.add_argument('--channel-area-id', dest='channel', help='filter by channel area id (ex: CENAN_JI_01_INL)')
     parser.add_argument('--no-header', dest='header', action='store_false', default=True)
 
     args, unk = parser.parse_known_args()
