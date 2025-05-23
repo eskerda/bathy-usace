@@ -96,6 +96,7 @@ def main(args):
 
     print("masking")
 
+    # XXX move these to functions
     if args.c_mask:
         # SLOW
         warn("concave mask filtering is slow, wait")
