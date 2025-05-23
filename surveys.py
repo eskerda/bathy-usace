@@ -79,7 +79,7 @@ def main(args, extra):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', dest='outfile', help='CSV output file')
+    parser.add_argument('-o', dest='outfile', help='CSV output file (stdout)')
     parser.add_argument('-n', dest='total', help='limit to N surveys', default=0, type=int)
     parser.add_argument('--query', dest='query', help='ArcGIS filter query')
     parser.add_argument('--district', dest='district', help='filter by district code (ex: CENAN)')

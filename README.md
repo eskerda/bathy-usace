@@ -14,7 +14,16 @@ To get a subset of it, run it like
 python surveys.py --query "(usacedistrictcode='CENAN') AND (channelareaidfk='CENAN_JI_01_INL')" > surveys.JI_01.csv
 ```
 
-Now you can query relevant information with any CSV tool
+The script accepts arbitrary parameters [ArcGIS query parameters][arcgisq]. For example,
+use the following to get the survey download url for the most recent 10 uploads.
+
+```bash
+python surveys.py -n 10 --orderByFields 'dateuploaded DESC' --outFields sourcedatalocation
+```
+
+[arcgisq]: https://developers.arcgis.com/documentation/portal-and-data-services/data-services/feature-services/query-features/
+
+## Query relevant survey information
 
 ```bash
 duckdb << EOF
@@ -55,7 +64,6 @@ EOF
 │ 17 rows                                                                                                                                                                                                                                     5 columns │
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
-
 
 ## Download surveys
 
