@@ -16,6 +16,12 @@ out_lines.shp: output.tif
 out_poly.shp: output.tif
 	gdal_contour -amin depth_min -amax depth_max -p -fl -10 -5 -4 -3 -2 -1 -0.5 0 output.tif out_poly.shp
 
+.PHONY: install
+install:
+	pip install -r requirements.txt
+	@echo "warming up env. This might take a long time ..."
+	python totiff.py --help
+
 .PHONY: contours
 contours: out_lines.shp out_poly.shp
 
