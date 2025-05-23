@@ -2,21 +2,23 @@ import sys
 
 from warnings import warn
 
-import alphashape
+import shapely
 import rasterio
+import alphashape
 
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 import rasterio.transform as rio_transform
 
+from pyproj import CRS
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter
-from shapely.geometry import Point, Polygon, MultiPolygon
 
 
 GRID_RES = 25  # meters
 HULL_ALPHA = 0.01
-HULL_BUFFER = 0.0
+HULL_BUFFER = GRID_RES
 G_SMOOTH = 1.3
 
 # NAD83
@@ -24,16 +26,6 @@ G_SMOOTH = 1.3
 IN_CRS = 'EPSG:2263'
 # Web Mercator
 OUT_CRS = 'EPSG:3857'
-
-
-def point_in_poly_mask(points, polygon):
-    """Return boolean mask of which points are inside the polygon."""
-    if isinstance(polygon, Polygon):
-        return np.array([polygon.contains(Point(xy)) for xy in points])
-    elif isinstance(polygon, MultiPolygon):
-        return np.array(
-            [any(poly.contains(Point(xy)) for poly in polygon.geoms) for xy in points]
-        )
 
 
 # XXX meh
@@ -54,10 +46,6 @@ def naive_read_csv(path, * args, ** kwargs):
 files = sys.argv[1:]
 
 df = pd.concat((naive_read_csv(f, names=["x", "y", "z"]) for f in files))
-
-import pandas as pd
-import geopandas as gpd
-from pyproj import CRS
 
 # Create GeoDataFrame with original CRS (EPSG:2263 = NAD83)
 gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['x'], df['y']), crs=IN_CRS)
@@ -85,7 +73,6 @@ zi = griddata((df["x"], df["y"]), df["z"], (xi, yi), method="nearest")
 # Apply Gaussian smoothing
 zi = gaussian_filter(zi, sigma=G_SMOOTH)
 
-
 print("masking")
 # MASKING #########################################################
 # Create alpha shape (concave hull)
@@ -93,11 +80,11 @@ hull = alphashape.alphashape(df[["x", "y"]].values, HULL_ALPHA)
 
 # Flatten the grid coordinates
 grid_points = np.c_[xi.ravel(), yi.ravel()]
-inside_mask_flat = point_in_poly_mask(grid_points, hull.buffer(HULL_BUFFER))
-inside_mask = inside_mask_flat.reshape(xi.shape)
-
-# fill outside with NaN or a nodata value
-zi_masked = np.where(inside_mask, zi, np.nan)
+mask = shapely.contains(hull.buffer(HULL_BUFFER), shapely.points(grid_points))
+# 2D mask
+mask = mask.reshape(xi.shape)
+zi = np.where(mask, zi, np.nan)
+###################################################################
 
 # Save as GeoTIFF
 xmin, xmax = xi.min(), xi.max()
@@ -118,4 +105,4 @@ with rasterio.open(
     crs=OUT_CRS,
     transform=transform,
 ) as dst:
-    dst.write(zi_masked, 1)
+    dst.write(zi, 1)
