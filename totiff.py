@@ -5,7 +5,6 @@ from warnings import warn
 
 import shapely
 import rasterio
-import alphashape
 
 import numpy as np
 import pandas as pd
@@ -19,6 +18,8 @@ GRID_RES = 25  # meters
 HULL_ALPHA = 0.01
 HULL_BUFFER = GRID_RES
 G_SMOOTH = 1.3
+# linear, cubic, nearest
+INTP_M = 'nearest'
 
 
 # XXX meh
@@ -44,10 +45,10 @@ def preview(df, xi, yi, zi, args, ** kwargs):
     # Plot
     plt.figure(figsize=(8, 6))
     plt.scatter(df["x"], df["y"], c=df["z"], s=0.1, marker=',', alpha=0.4)
-    CS = plt.contour(xi, yi, zi, levels=levels, colors="black", linestyles="solid", linewidths=0.8, alpha=0.5, ) # , cmap="Blues")
+    CS = plt.contour(xi, yi, zi, levels=levels, colors="black", linestyles="solid", linewidths=0.8, alpha=0.5)
     plt.clabel(CS, inline=True, fontsize=6, inline_spacing=0.1)
-    plt.imshow(zi, extent=(xi.min(), xi.max(), yi.min(), yi.max()), cmap="Blues_r", alpha=0.8,)
-    # plt.title(f"Bathymetry Contours ({INTP} - {GRID_RES})")
+    plt.imshow(zi, extent=(xi.min(), xi.max(), yi.min(), yi.max()), cmap="Blues_r", alpha=0.8)
+    plt.title(f"Bathymetry Contours ({args.intp_m} - {args.grid_res})")
     plt.colorbar(label="Depth")
 
     if args.outfile:
@@ -85,7 +86,7 @@ def main(args):
     xi, yi = np.meshgrid(xi, yi)
 
     # Interpolate
-    zi = griddata((df["x"], df["y"]), df["z"], (xi, yi), method="nearest")
+    zi = griddata((df["x"], df["y"]), df["z"], (xi, yi), method=args.intp_m)
 
     # Apply Gaussian smoothing
     zi = gaussian_filter(zi, sigma=G_SMOOTH)
@@ -135,7 +136,7 @@ def main(args):
         # These need to be tuned for clean lines
 
         # XXX make this proportional to point density
-        valid = dist < HULL_BUFFER
+        valid = dist < HULL_BUFFER * 2
 
         mask = valid.reshape(xi.shape)
 
@@ -180,6 +181,7 @@ if __name__ == "__main__":
     parser.add_argument('--hull-alpha', dest='hull_alpha', default=HULL_ALPHA, type=float)
     parser.add_argument('--hull-buffer', dest='hull_buffer', default=HULL_BUFFER, type=float)
     parser.add_argument('--g-smooth-sigma', dest='g_smooth', default=G_SMOOTH, type=float)
+    parser.add_argument('--interpolate', dest='intp_m', default=INTP_M)
     parser.add_argument('--concave-mask', dest='c_mask', action='store_true', default=False)
     parser.add_argument('-o', dest='outfile', help='output file')
 
