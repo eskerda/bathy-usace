@@ -13,7 +13,7 @@ PAGE_SIZE = 100
 ENDPOINT = "https://services7.arcgis.com/n1YM8pTrFmm7L4hs/arcgis/rest/services/eHydro_Survey_Data/FeatureServer/0/query"
 
 
-def arcgis_q(query="1=1", offset=0, count=100, order=None, **kwargs):
+def arcgis_q(query="1=1", offset=0, count=100, **kwargs):
     args = {
         "f": "json",
         "resultOffset": offset,
@@ -22,7 +22,7 @@ def arcgis_q(query="1=1", offset=0, count=100, order=None, **kwargs):
         "outFields": "*",
         "resultType": "standard",
         "returnGeometry": False,
-        "orderByFields": order or "OBJECTID",
+        "orderByFields": "OBJECTID",
     }
     r = requests.get(ENDPOINT, params=dict(args, **kwargs)).json()
 
@@ -37,7 +37,7 @@ def arcgis_q_count(*args, **kwargs):
     return r["count"]
 
 
-def main(args):
+def main(args, extra):
     if args.outfile and args.outfile != '-':
         out = open(args.outfile, 'w')
     else:
@@ -55,7 +55,7 @@ def main(args):
     query = ' AND '.join(queries)
     query = query or "1=1"
 
-    total = arcgis_q_count(query, order=args.order)
+    total = arcgis_q_count(query, ** extra)
     total = min(args.total or total, total)
     page = min(total, PAGE_SIZE)
 
@@ -63,7 +63,7 @@ def main(args):
     for i in tqdm(range(0, total, page)):
         surveys = [
             f["attributes"] for f in
-                arcgis_q(query, i, page, order=args.order)["features"]
+                arcgis_q(query, i, page, ** extra)["features"]
         ]
 
         if i == 0:
@@ -85,7 +85,13 @@ if __name__ == "__main__":
     parser.add_argument('--district', dest='district', help='filter by district code (ex: CENAN)')
     parser.add_argument('--channel-area-id', dest='channel', help='filter by channel area id (ex: CENAN_JI_01_INL)')
     parser.add_argument('--no-header', dest='header', action='store_false', default=True)
-    parser.add_argument('--order-by', dest='order', help='order by feature fields')
-    args = parser.parse_args()
 
-    main(args)
+    args, unk = parser.parse_known_args()
+
+    # arbitrary ArcGIS query parameters.
+    # see: https://developers.arcgis.com/documentation/portal-and-data-services/data-services/feature-services/query-features/
+    # ie: --orderByFields dateuploaded --outFields OBJECTID,sourcedatalocation
+    iter_unk = iter(unk)
+    extra = {k.strip('--'): v for k, v in zip(iter_unk, iter_unk)}
+
+    main(args, extra)
