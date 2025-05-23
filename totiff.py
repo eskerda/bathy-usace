@@ -64,6 +64,13 @@ def main(args):
     files = args.files
 
     df = pd.concat((naive_read_csv(f, names=["x", "y", "z"]) for f in files))
+    dupes = df.duplicated(subset=['x', 'y'], keep=False)
+    if dupes.any():
+        warn(f"Found {dupes.sum()} dupes in dataset, averaging")
+        # warn on duplicates, get min
+        df = df.groupby(['x', 'y'], as_index=False).mean()
+        # Or get min
+        # df = df.groupby(['x', 'y'], as_index=False).agg({'z': 'min'})
 
     # feet to meters
     df["z"] = df["z"] * 0.3048
