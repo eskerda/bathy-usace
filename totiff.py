@@ -63,6 +63,7 @@ def main(args):
     G_SMOOTH = args.g_smooth
     files = args.files
 
+    print("Reading CSV")
     df = pd.concat((naive_read_csv(f, names=["x", "y", "z"]) for f in files))
     dupes = df.duplicated(subset=['x', 'y'], keep=False)
     if dupes.any():
@@ -72,6 +73,7 @@ def main(args):
         # Or get min
         # df = df.groupby(['x', 'y'], as_index=False).agg({'z': 'min'})
 
+    print("Interpolating")
     # feet to meters
     df["z"] = df["z"] * 0.3048
     print("x min/max:", df["x"].min(), df["x"].max())
@@ -88,26 +90,66 @@ def main(args):
     # Apply Gaussian smoothing
     zi = gaussian_filter(zi, sigma=G_SMOOTH)
 
-    print("masking")
     # MASKING #########################################################
-    # Create alpha shape (concave hull)
-    hull = alphashape.alphashape(df[["x", "y"]].values, HULL_ALPHA)
+    # This is the slowest step that I NEED TO FIX
 
-    # Flatten the grid coordinates
-    grid_points = np.c_[xi.ravel(), yi.ravel()]
-    mask = shapely.contains(hull.buffer(HULL_BUFFER), shapely.points(grid_points))
-    # 2D mask
-    mask = mask.reshape(xi.shape)
-    # smoothed = gaussian_filter(mask.astype(float), sigma=2)
-    # # Threshold to get back to binary
-    # mask = smoothed > 0.1
+    print("masking")
 
+    if args.c_mask:
+        # SLOW
+        warn("concave mask filtering is slow, wait")
+
+        import alphashape
+        # Create alpha shape (concave hull)
+        print("Calculating alpha shape")
+        hull = alphashape.alphashape(df[["x", "y"]].values, HULL_ALPHA)
+
+        # Flatten the grid coordinates
+        # Grid coordinates
+        grid_points = np.c_[xi.ravel(), yi.ravel()]
+        print("Generating mask")
+        mask = shapely.contains(hull.buffer(HULL_BUFFER), shapely.points(grid_points))
+        # 2D mask
+        mask = mask.reshape(xi.shape)
+        # smoothed = gaussian_filter(mask.astype(float), sigma=2)
+        # # Threshold to get back to binary
+        # mask = smoothed > 0.1
+    else:
+        # FAST
+        # Build KDTree from input
+        from scipy.spatial import cKDTree
+
+        # Scattered input points
+        xy = df[['x', 'y']].values
+
+        # Grid coordinates
+        grid_points = np.c_[xi.ravel(), yi.ravel()]
+
+        # Scattered input points
+        xy = df[['x', 'y']].values
+        tree = cKDTree(xy)
+
+        # Query: what's the distance to nearest input point?
+        dist, _ = tree.query(grid_points)
+
+        # These need to be tuned for clean lines
+
+        # XXX make this proportional to point density
+        valid = dist < HULL_BUFFER
+
+        mask = valid.reshape(xi.shape)
+
+        # XXX tune post-filter
+        soft_mask = gaussian_filter(mask.astype(float), sigma=1.5)
+        mask = soft_mask > 0.3
+
+    print("Masking masking")
     zi = np.where(mask, zi, np.nan)
-    ###################################################################
 
     if args.preview:
         return preview(** locals())
 
+    print("generating tiff")
     # Save as GeoTIFF
     xmin, xmax = xi.min(), xi.max()
     ymin, ymax = yi.min(), yi.max()
@@ -134,10 +176,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('files', nargs='+')
     parser.add_argument('--preview', action='store_true', default=False)
-    parser.add_argument('--grid-res', dest='grid_res', default=GRID_RES)
+    parser.add_argument('--grid-res', dest='grid_res', default=GRID_RES, type=int)
     parser.add_argument('--hull-alpha', dest='hull_alpha', default=HULL_ALPHA, type=float)
     parser.add_argument('--hull-buffer', dest='hull_buffer', default=HULL_BUFFER, type=float)
     parser.add_argument('--g-smooth-sigma', dest='g_smooth', default=G_SMOOTH, type=float)
+    parser.add_argument('--concave-mask', dest='c_mask', action='store_true', default=False)
     parser.add_argument('-o', dest='outfile', help='output file')
 
     args = parser.parse_args()
