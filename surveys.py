@@ -68,7 +68,8 @@ def main(args):
 
         if i == 0:
             writer.fieldnames = sorted(surveys[0].keys())
-            writer.writeheader()
+            if args.header:
+                writer.writeheader()
 
         writer.writerows(surveys)
 
@@ -83,6 +84,7 @@ if __name__ == "__main__":
     parser.add_argument('--query', dest='query', help='ArcGIS filter query')
     parser.add_argument('--district', dest='district', help='filter by district code (ex: CENAN)')
     parser.add_argument('--channel-area-id', dest='channel', help='filter by channel area id (ex: CENAN_JI_01_INL)')
+    parser.add_argument('--no-header', dest='header', action='store_false', default=True)
     parser.add_argument('--order-by', dest='order', help='order by feature fields')
     args = parser.parse_args()
 
