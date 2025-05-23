@@ -1,5 +1,14 @@
 # USACE Bathymetry ingestion pipeline
 
+## Requirements
+
+This repo requires [gdal](https://gdal.org/en/stable/) and python
+
+```bash
+pip install -r requirements.txt
+brew install gdal
+```
+
 ## Generate a CSV of USACE surveys feature data from arcgis
 
 Get survey information from USACE arcgis website as CSV.
