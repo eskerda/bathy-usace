@@ -89,6 +89,16 @@ duckdb -noheader -list \
         | parallel --bar -j 10 'curl -s -L --create-dirs -o surveys/{/} {}'
 ```
 
+** Extra Bonus ** no need to create a csv. The following downloads the 10 most
+recently uploaded USACE surveys
+
+```bash
+python surveys.py -n 10 \
+                  --orderByFields 'dateuploaded DESC' \
+                  --outFields sourcedatalocation --no-header \
+        | parallel --progress -d "\r\n" -j 10 'curl -s -L --create-dirs -o surveys/{/} {}'
+```
+
 ## Visualize XYZ USACE survey
 
 This part is useful to inspect the data and make some sense out of it using
