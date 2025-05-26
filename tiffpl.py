@@ -1,8 +1,11 @@
+import os
 import sys
 import rasterio
 import matplotlib.pyplot as plt
 
 import geopandas as gpd
+
+OUTFILE = os.getenv('OUTFILE')
 
 with rasterio.open(sys.argv[1]) as src:
     img = src.read(1)  # read the first band
@@ -22,4 +25,8 @@ plt.title("Bathymetry")
 plt.xlabel("X")
 plt.ylabel("Y")
 plt.axis('equal')
-plt.show()
+
+if OUTFILE:
+    plt.savefig(OUTFILE, dpi=300)
+else:
+    plt.show()
