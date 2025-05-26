@@ -166,20 +166,20 @@ function main {
         ;;
       extract)
         pushd $L_PATH/surveys
-          unzip -j '*.ZIP' "*.XYZ" -x "*FULL.XYZ" -d data
+          unzip -j '*.ZIP' "*.XYZ" -x "*FULL.XYZ" -x "*_A.XYZ" -d data
         popd
         ;;
       preview)
         files=()
         while read -r line; do
-          files+=("surveys/data/$line.XYZ")
+          [[ -f "surveys/data/$line.XYZ" ]] && files+=("surveys/data/$line.XYZ")
         done < <(process_q "surveyjobidpk")
         python $L_PATH/totiff.py ${files[@]} $@ ${_NP_ARGS[@]} --preview
         ;;
       do)
         files=()
         while read -r line; do
-          files+=("surveys/data/$line.XYZ")
+          [[ -f "surveys/data/$line.XYZ" ]] && files+=("surveys/data/$line.XYZ")
         done < <(process_q "surveyjobidpk")
         python $L_PATH/totiff.py ${files[@]} $@ ${_NP_ARGS[@]}
         ;;

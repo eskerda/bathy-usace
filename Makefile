@@ -13,7 +13,7 @@ all: preview
 sample:
 	# XXX Make it so incomplete downloads can be resumed
 	cat surveys.sample.txt | parallel --bar -j 10 'curl -s -L --create-dirs -o sample/{/} {}'
-	cd sample; unzip -j '*.ZIP' "*.XYZ" -x "*FULL.XYZ" -d data
+	cd sample; unzip -j '*.ZIP' "*.XYZ" -x "*FULL.XYZ" -x "*_A.XYZ" -d data
 
 $(OUTFILE): sample
 	python totiff.py -o $(OUTFILE) \
