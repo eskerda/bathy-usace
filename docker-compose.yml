@@ -9,12 +9,27 @@ services:
       - ./pgdata:/var/lib/postgresql/data
     ports:
       - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
   martin:
     image: ghcr.io/maplibre/martin
     environment:
-      DATABASE_URL: postgresql://postgis/orca
+      DATABASE_URL: postgresql://postgres@postgis/orca
+    ports:
+      - 3000:3000
+    depends_on:
+      postgis:
+        condition: service_healthy
+        restart: true
+    # disable cache
+    command: "-C 0"
   www:
     build:
       context: www
     ports:
       - 1337:80
+    depends_on:
+      - martin
