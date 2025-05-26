@@ -2,7 +2,7 @@
 
 ## Requirements
 
-This repo requires [gdal](https://gdal.org/en/stable/) and python
+This repo requires [GDAL](https://gdal.org/en/stable/) and python
 
 ```bash
 pip install -r requirements.txt
@@ -39,14 +39,17 @@ python surveys.py > surveys.csv
 To get a subset of it, run it like
 
 ```bash
-python surveys.py --query "(usacedistrictcode='CENAN') AND (channelareaidfk='CENAN_JI_01_INL')" > surveys.JI_01.csv
+python surveys.py --query "(usacedistrictcode='CENAN') AND (channelareaidfk='CENAN_JI_01_INL')" \
+        > surveys.JI_01.csv
 ```
 
 The script accepts arbitrary parameters [ArcGIS query parameters][arcgisq]. For example,
 use the following to get the survey download url for the most recent 10 uploads.
 
 ```bash
-python surveys.py -n 10 --orderByFields 'dateuploaded DESC' --outFields sourcedatalocation
+python surveys.py -n 10 \
+                  --orderByFields 'dateuploaded DESC' \
+                  --outFields sourcedatalocation
 ```
 
 [arcgisq]: https://developers.arcgis.com/documentation/portal-and-data-services/data-services/feature-services/query-features/
@@ -109,7 +112,7 @@ Download all zips
 cat urls.txt | parallel --bar -j 10 'curl -s -L --create-dirs -o surveys/{/} {}'
 ```
 
-** Bonus ** no need to create a txt
+**Bonus** no need to create a txt
 
 ```bash
 duckdb -noheader -list \
@@ -117,7 +120,7 @@ duckdb -noheader -list \
         | parallel --bar -j 10 'curl -s -L --create-dirs -o surveys/{/} {}'
 ```
 
-** Extra Bonus ** no need to create a csv. The following downloads the 10 most
+**Extra Bonus** no need to create a csv. The following downloads the 10 most
 recently uploaded USACE surveys
 
 ```bash
