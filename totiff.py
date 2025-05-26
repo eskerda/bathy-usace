@@ -109,6 +109,12 @@ def main(args):
 
     # feet to meters
     df["z"] = df["z"] * 0.3048
+
+    # use negative depth
+    if df['z'].min() > 0:
+        log.warning("input z in positive depth, negating")
+        df['z'] = - df['z']
+
     log.info("x min/max: %s %s", df["x"].min(), df["x"].max())
     log.info("y min/max: %s %s", df["y"].min(), df["y"].max())
     log.info("z min/max: %s %s", df["z"].min(), df["z"].max())
