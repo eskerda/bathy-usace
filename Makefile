@@ -1,5 +1,6 @@
 IN_CRS=EPSG:2263
 OUT_CRS=EPSG:3857
+LEVELS="-10 -5 -4 -3 -2 -1 -0.5 0"
 
 sample:
 	# XXX Make it so incomplete downloads can be resumed
@@ -11,10 +12,10 @@ output.tif: sample
 		$$(find ./sample/data -type f -name '*.XYZ' ! -name '*_FULL.XYZ')
 
 out_lines.shp: output.tif
-	gdal_contour -a depth -fl -10 -5 -4 -3 -2 -1 -0.5 0 output.tif out_lines.shp
+	gdal_contour -a depth -fl $(LEVELS) output.tif out_lines.shp
 
 out_poly.shp: output.tif
-	gdal_contour -amin depth_min -amax depth_max -p -fl -10 -5 -4 -3 -2 -1 -0.5 0 output.tif out_poly.shp
+	gdal_contour -amin depth_min -amax depth_max -p -fl $(LEVELS) output.tif out_poly.shp
 
 .PHONY: install
 install:

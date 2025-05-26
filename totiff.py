@@ -40,6 +40,7 @@ def preview(df, xi, yi, zi, args, ** kwargs):
     import matplotlib.pyplot as plt
 
     # Maybe try log. steps or something more visually interesting ?
+    # levels = [-10, -5, -4, -3, -2, -1, -0.5, 0]
     levels = None
 
     # Plot
