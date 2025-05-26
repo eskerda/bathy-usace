@@ -22,6 +22,8 @@ G_SMOOTH = float(os.getenv('G_SMOOTH', 1.3))
 INTP_M = os.getenv('INTP_M', 'nearest')
 C_MASK = str(os.getenv('C_MASK', 0)).lower() in ['true', '1']
 D_MASK = str(os.getenv('D_MASK', 1)).lower() in ['true', '1']
+M_DIST = float(os.getenv('M_DIST', HULL_BUFFER * 2))
+M_SIGMA = float(os.getenv('M_SIGMA', 1.5))
 
 log = logging.getLogger("totiff")
 
@@ -62,16 +64,16 @@ def preview(df, xi, yi, zi, args, ** kwargs):
         plt.show()
 
 
-def concave_mask(xys, xyi):
+def concave_mask(xys, xyi, alpha=HULL_ALPHA, buffer=HULL_BUFFER):
     """ Generates a mask based on the concave hull of scattered points """
     from alphashape import alphashape
 
-    hull = alphashape(xys, HULL_ALPHA)
-    mask = shapely.contains(hull.buffer(HULL_BUFFER), shapely.points(xyi))
+    hull = alphashape(xys, alpha)
+    mask = shapely.contains(hull.buffer(buffer), shapely.points(xyi))
 
     return mask
 
-def distance_mask(xys, xyi):
+def distance_mask(xys, xyi, distance=HULL_BUFFER*2, sigma=1.5):
     """ Generates a mask based on the distance to nearest point """
     from scipy.spatial import cKDTree
     tree = cKDTree(xys)
@@ -79,9 +81,9 @@ def distance_mask(xys, xyi):
 
     # XXX tune these params
     # XXX make this proportional to point density
-    mask = dist < HULL_BUFFER * 2
-    # Smooth mask to fill in distance holes
-    mask = gaussian_filter(mask.astype(float), sigma=1.5) > 0.3
+    mask = dist < distance
+    # Smooth mask to fill in holes
+    mask = gaussian_filter(mask.astype(float), sigma=sigma) > 0.3
 
     return mask
 
@@ -91,6 +93,8 @@ def main(args):
     HULL_ALPHA = args.hull_alpha
     HULL_BUFFER = args.hull_buffer
     G_SMOOTH = args.g_smooth
+    M_DIST = args.m_dist
+    M_SIGMA = args.m_sigma
     files = args.files
 
     log.info("Reading CSV")
@@ -122,9 +126,17 @@ def main(args):
     if any([args.c_mask, args.d_mask]):
         if args.c_mask:
             log.warning("concave mask filtering is slow, wait")
-            mask = concave_mask(df[["x", "y"]].values, np.c_[xi.ravel(), yi.ravel()])
+            mask = concave_mask(
+                df[["x", "y"]].values,
+                np.c_[xi.ravel(), yi.ravel()],
+                HULL_ALPHA, HULL_BUFFER,
+            )
         elif args.d_mask:
-            mask = distance_mask(df[["x", "y"]].values, np.c_[xi.ravel(), yi.ravel()])
+            mask = distance_mask(
+                df[["x", "y"]].values,
+                np.c_[xi.ravel(), yi.ravel()],
+                M_DIST, M_SIGMA
+            )
         mask = mask.reshape(xi.shape)
         log.info("Applying mask")
         zi = np.where(mask, zi, np.nan)
@@ -138,7 +150,10 @@ def main(args):
     ymin, ymax = yi.min(), yi.max()
     height, width = zi.shape
     transform = rio_transform.from_bounds(
-        west=xmin, south=ymin, east=xmax, north=ymax, width=width, height=height
+        west=xmin, south=ymin,
+        east=xmax, north=ymax,
+        width=width,
+        height=height,
     )
 
     with rasterio.open(
@@ -166,6 +181,8 @@ if __name__ == "__main__":
     parser.add_argument('--interpolate', dest='intp_m', default=INTP_M)
     parser.add_argument('--concave-mask', dest='c_mask', action='store_true', default=C_MASK, help="precise concave mask (slow)")
     parser.add_argument('--distance-mask', dest='d_mask', action='store_true', default=D_MASK, help="distance mask (fast)")
+    parser.add_argument('--mask-d-sigma', dest='m_sigma', type=float, default=M_SIGMA)
+    parser.add_argument('--mask-d-dist', dest='m_dist', type=float, default=M_DIST)
     parser.add_argument('-o', dest='outfile', help='output file')
 
     args = parser.parse_args()
