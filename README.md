@@ -13,7 +13,7 @@ brew install gdal
 
 The following will start dependent services, download a set of sample USACE
 data, generate contours and push them into a postgis instance. Finally open
-the demo website to see the map.
+the demo website to see the map at http://localhost:1337
 
 ```bash
 python3 -m venv venv
@@ -187,6 +187,14 @@ python tiffpl.py output.tif out_lines.shp
 
 #### Run a postgis instance
 
+##### docker compose
+
+```bash
+docker compose up -d postgis
+```
+
+##### docker
+
 ```bash
 docker run --rm -it \
            -e POSTGRES_HOST_AUTH_METHOD=trust \
@@ -209,20 +217,45 @@ docker build -t postgis/postgis .
 
 #### Store contours in postgis
 
+Note that before pushing the shapefiels to postgis they need to be reprojected
+from the original CRS to EPSG:3857 (web mercator).
+
 ```bash
 ogr2ogr -f "PostgreSQL" PG:"host=localhost dbname=orca user=postgres" \
         -nln bathy -nlt MULTILINESTRING \
+        -s_srs EPSG:2263 -t_srs EPSG:3857 \
         out_lines.shp
 
 ogr2ogr -f "PostgreSQL" PG:"host=localhost dbname=orca user=postgres" \
         -nln bathy_pol -nlt MULTIPOLYGON \
+        -s_srs EPSG:2263 -t_srs EPSG:3857 \
         out_poly.shp
 ```
 
+USAGE survey data contain the original projection as `sourceprojection`.
 
-## Run www map visualization
+Use the utility script to get it in EPSG form
 
-#### Start martin for tile serving
+```bash
+$ ./process.sh crs --survey-id JI_01_INL_20250501_CS_5560_60
+EPSG:2263
+$ ./process.sh crs --survey-id SF_24_HBX_20210424_CS
+EPSG:2225
+```
+
+### Run www map visualization
+
+#### Using docker compose
+
+```bash
+docker compose up -d wwww
+```
+
+The website should be available at http://localhost:1337
+
+#### Locally
+
+##### Start martin for tile serving
 
 ```bash
 docker run -p 3000:3000 -e RUST_LOG=debug \
@@ -232,7 +265,7 @@ docker run -p 3000:3000 -e RUST_LOG=debug \
            ghcr.io/maplibre/martin
 ```
 
-#### Build website and serve
+##### Build website and serve
 
 ```bash
 cd www
@@ -255,15 +288,16 @@ For most of the parts, there's a --preview counterpart that helps exploring the
 dataset and tweaking parameters to get appropiate contour lines, depending on
 the density of the survey and the quality of the data.
 
-Ideally there would be less work done in `pandas` and `gdal_` locally, and
-instead leverage native postgis functions and the `gdal` extension. Still I
+Ideally there would be **less work** done in `pandas` and `gdal_` locally, and
+instead **leverage native postgis functions** and the `gdal` extension. Still I
 think it's very useful to graph and visualize the information to get a feel of
 it.
 
 In general, the pipe looks like:
 
 * Collect metadata (surveys.csv)
-* Query surveys.csv and download desired .ZIP from USACE
+* Query surveys.csv and download a survey or any survey in a channel area from
+USACE.
 * Preview the information and tweak parameters
 * Generate a tiff file and generate contours using gdal
 * Push contours to postgis
