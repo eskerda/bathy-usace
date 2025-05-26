@@ -22,8 +22,10 @@ G_SMOOTH = float(os.getenv('G_SMOOTH', 1.3))
 INTP_M = os.getenv('INTP_M', 'nearest')
 C_MASK = str(os.getenv('C_MASK', 0)).lower() in ['true', '1']
 D_MASK = str(os.getenv('D_MASK', 1)).lower() in ['true', '1']
-M_DIST = float(os.getenv('M_DIST', HULL_BUFFER * 2))
+S_MASK = str(os.getenv('S_MASK', 1)).lower() in ['true', '1']
+M_DIST = float(os.getenv('M_DIST', GRID_RES * 2))
 M_SIGMA = float(os.getenv('M_SIGMA', 1.5))
+M_CUTOFF = float(os.getenv('M_CUTOFF', 0.3))
 
 log = logging.getLogger("totiff")
 
@@ -73,7 +75,7 @@ def concave_mask(xys, xyi, alpha=HULL_ALPHA, buffer=HULL_BUFFER):
 
     return mask
 
-def distance_mask(xys, xyi, distance=HULL_BUFFER*2, sigma=1.5):
+def distance_mask(xys, xyi, distance=HULL_BUFFER*2):
     """ Generates a mask based on the distance to nearest point """
     from scipy.spatial import cKDTree
     tree = cKDTree(xys)
@@ -82,8 +84,6 @@ def distance_mask(xys, xyi, distance=HULL_BUFFER*2, sigma=1.5):
     # XXX tune these params
     # XXX make this proportional to point density
     mask = dist < distance
-    # Smooth mask to fill in holes
-    mask = gaussian_filter(mask.astype(float), sigma=sigma) > 0.3
 
     return mask
 
@@ -95,6 +95,8 @@ def main(args):
     G_SMOOTH = args.g_smooth
     M_DIST = args.m_dist
     M_SIGMA = args.m_sigma
+    M_CUTOFF = args.m_cutoff
+
     files = args.files
 
     log.info("Reading CSV")
@@ -105,13 +107,13 @@ def main(args):
         log.warning("Found %d dupes in dataset, averaging", dupes.sum())
         df = df.groupby(['x', 'y'], as_index=False).agg({'z': 'mean'})
 
-    log.info("Interpolating")
     # feet to meters
     df["z"] = df["z"] * 0.3048
     log.info("x min/max: %s %s", df["x"].min(), df["x"].max())
     log.info("y min/max: %s %s", df["y"].min(), df["y"].max())
     log.info("z min/max: %s %s", df["z"].min(), df["z"].max())
 
+    log.info("Interpolating: %s x %s", GRID_RES, GRID_RES)
     # Define grid
     xi = np.arange(df["x"].min(), df["x"].max(), GRID_RES)
     yi = np.arange(df["y"].max(), df["y"].min(), - GRID_RES)
@@ -124,19 +126,27 @@ def main(args):
 
     # Mask
     if any([args.c_mask, args.d_mask]):
+        log.info("Generating mask")
         if args.c_mask:
-            log.warning("concave mask filtering is slow, wait")
+            log.warning("concave mask filtering is slow, please wait")
+            log.info("Concave mask: %s, %f, %f", args.c_mask, HULL_ALPHA, HULL_BUFFER)
             mask = concave_mask(
                 df[["x", "y"]].values,
                 np.c_[xi.ravel(), yi.ravel()],
                 HULL_ALPHA, HULL_BUFFER,
             )
         elif args.d_mask:
+            log.info("Distance mask: %s, %f", args.d_mask, M_DIST)
             mask = distance_mask(
                 df[["x", "y"]].values,
                 np.c_[xi.ravel(), yi.ravel()],
-                M_DIST, M_SIGMA
+                M_DIST,
             )
+
+        if args.s_mask:
+            log.info("Smoothing mask: sigma %f, cutoff %f", M_SIGMA, M_CUTOFF)
+            mask = gaussian_filter(mask.astype(float), sigma=M_SIGMA) > M_CUTOFF
+
         mask = mask.reshape(xi.shape)
         log.info("Applying mask")
         zi = np.where(mask, zi, np.nan)
@@ -174,15 +184,22 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('files', nargs='+')
     parser.add_argument('--preview', action='store_true', default=False)
+
     parser.add_argument('--grid-res', dest='grid_res', default=GRID_RES, type=int)
-    parser.add_argument('--hull-alpha', dest='hull_alpha', default=HULL_ALPHA, type=float)
-    parser.add_argument('--hull-buffer', dest='hull_buffer', default=HULL_BUFFER, type=float)
-    parser.add_argument('--g-smooth-sigma', dest='g_smooth', default=G_SMOOTH, type=float)
     parser.add_argument('--interpolate', dest='intp_m', default=INTP_M)
+    parser.add_argument('--interpolate-smooth-sigma', dest='g_smooth', default=G_SMOOTH, type=float)
+
     parser.add_argument('--concave-mask', dest='c_mask', action='store_true', default=C_MASK, help="precise concave mask (slow)")
+    parser.add_argument('--concave-mask-alpha', dest='hull_alpha', default=HULL_ALPHA, type=float)
+    parser.add_argument('--concave-mask-buffer', dest='hull_buffer', default=HULL_BUFFER, type=float)
+
     parser.add_argument('--distance-mask', dest='d_mask', action='store_true', default=D_MASK, help="distance mask (fast)")
-    parser.add_argument('--mask-d-sigma', dest='m_sigma', type=float, default=M_SIGMA)
-    parser.add_argument('--mask-d-dist', dest='m_dist', type=float, default=M_DIST)
+    parser.add_argument('--distance-filter', dest='m_dist', type=float, default=M_DIST)
+
+    parser.add_argument('--smooth-mask', dest='s_mask', action='store_true', default=S_MASK, help="smooth mask")
+    parser.add_argument('--smooth-mask-sigma', dest='m_sigma', type=float, default=M_SIGMA)
+    parser.add_argument('--smooth-mask-cutoff', dest='m_cutoff', type=float, default=M_CUTOFF)
+
     parser.add_argument('-o', dest='outfile', help='output file')
 
     args = parser.parse_args()
