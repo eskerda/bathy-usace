@@ -217,7 +217,7 @@ docker build -t postgis/postgis .
 
 #### Store contours in postgis
 
-Note that before pushing the shapefiels to postgis they need to be reprojected
+Note that before pushing the shapefiles to postgis they need to be reprojected
 from the original CRS to EPSG:3857 (web mercator).
 
 ```bash
@@ -285,7 +285,7 @@ npm run dev
 
 The scripts on this repo are meant to be used and tweaked on selected surveys.
 For most of the parts, there's a --preview counterpart that helps exploring the
-dataset and tweaking parameters to get appropiate contour lines, depending on
+dataset and tweaking parameters to get appropriate contour lines, depending on
 the density of the survey and the quality of the data.
 
 Ideally there would be **less work** done in `pandas` and `gdal_` locally, and
