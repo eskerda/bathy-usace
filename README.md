@@ -142,6 +142,65 @@ python totiff.py JI_01_INL_20250501_CS_5560_60.XYZ --preview
 
 <img width="531" alt="image" src="https://github.com/user-attachments/assets/7ff42af1-883b-474e-baba-c7e14f0cdca2" />
 
+#### Masking
+
+`totiff.py` supports two methods for masking the interpolated grid data,
+filtering by distance using [k-d trees] (default) and using a hull.
+
+[k-d trees]: https://en.wikipedia.org/wiki/K-d_tree
+
+Distance filtering is fast and preferred for large datasets, while a concave
+hull is the most precise method for creating a mask, it will be very slow on
+large inputs.
+
+##### Example using distance filtering
+
+```bash
+eskerda@trouble orca % time python totiff.py sample/data/*.XYZ
+21:07:46.789 | INFO | Reading CSV
+21:07:46.820 | WARNING | sample/data/JI_01_INL_20230503_CS_5283_45_A.XYZ is comma separated
+21:07:46.998 | WARNING | Found 52663 dupes in dataset, averaging
+21:07:47.198 | INFO | x min/max: 1092164.65 1108222.98
+21:07:47.199 | INFO | y min/max: 145660.02 160284.13
+21:07:47.200 | INFO | z min/max: -11.8872 9.2202
+21:07:47.200 | INFO | Size 2753313
+21:07:47.200 | INFO | Interpolating: 25 x 25
+21:07:48.197 | INFO | Generating mask
+21:07:48.197 | INFO | Distance mask: True, 50.000000
+21:07:49.187 | INFO | Smoothing mask: sigma 1.500000, cutoff 0.300000
+21:07:49.190 | INFO | Applying mask
+21:07:49.191 | INFO | generating output.tif
+python totiff.py sample/data/*.XYZ  2.93s user 0.17s system 99% cpu 3.108 total
+```
+
+<img width="698" alt="image" src="https://github.com/user-attachments/assets/599a98c2-14cd-4536-9dd4-6cb8096addd2" />
+
+##### Example using a convex hull
+
+```bash
+eskerda@trouble orca % time python totiff.py sample/data/*.XYZ --concave-mask
+21:14:37.872 | INFO | Reading CSV
+21:14:37.902 | WARNING | sample/data/JI_01_INL_20230503_CS_5283_45_A.XYZ is comma separated
+21:14:38.080 | WARNING | Found 52663 dupes in dataset, averaging
+21:14:38.281 | INFO | x min/max: 1092164.65 1108222.98
+21:14:38.282 | INFO | y min/max: 145660.02 160284.13
+21:14:38.283 | INFO | z min/max: -11.8872 9.2202
+21:14:38.283 | INFO | Size 2753313
+21:14:38.283 | INFO | Interpolating: 25 x 25
+21:14:39.289 | INFO | Generating mask
+21:14:39.289 | WARNING | concave mask filtering is slow, please wait
+21:14:39.289 | INFO | Concave mask: True, 0.010000, 25.000000
+21:16:02.386 | INFO | Smoothing mask: sigma 1.500000, cutoff 0.300000
+21:16:02.390 | INFO | Applying mask
+21:16:02.390 | INFO | generating output.tif
+python totiff.py sample/data/*.XYZ --concave-mask  83.92s user 1.33s system 99% cpu 1:25.32 total
+```
+
+<img width="698" alt="image" src="https://github.com/user-attachments/assets/dbf98db1-050e-434f-910f-e8679c1e0032" />
+
+Note this method didn't filter out data on parts of the bathymetry that were
+very sparse. But it comes at a 20x cost.
+
 On sparse data, it's important to tweak parameters to properly get a mask,
 either by increasing the distance filter or by using a hull. On these cases
 generally a convex hull works better since a concave hull will result in
