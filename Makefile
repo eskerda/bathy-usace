@@ -2,6 +2,8 @@ IN_CRS=EPSG:2263
 OUT_CRS=EPSG:3857
 LEVELS="-10 -5 -4 -3 -2 -1 -0.5 0"
 
+all: preview
+
 sample:
 	# XXX Make it so incomplete downloads can be resumed
 	cat surveys.sample.txt | parallel --bar -j 10 'curl -s -L --create-dirs -o sample/{/} {}'
