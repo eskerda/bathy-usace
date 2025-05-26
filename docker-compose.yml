@@ -1,0 +1,20 @@
+services:
+  postgis:
+    image: local/postgis
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_DB: orca
+      PG_DATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+  martin:
+    image: ghcr.io/maplibre/martin
+    environment:
+      DATABASE_URL: postgresql://postgis/orca
+  www:
+    build:
+      context: www
+    ports:
+      - 1337:80
