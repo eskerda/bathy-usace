@@ -1,3 +1,5 @@
+# For advanced usage, look at the process.sh script
+
 IN_CRS=EPSG:2263
 OUT_CRS=EPSG:3857
 LEVELS="-10 -5 -4 -3 -2 -1 -0.5 0"

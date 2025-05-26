@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 
+# This utility script is a barebones version of a general script to tie
+# together all the components of this project. It's meant as a more powerful
+# tool than a Makefile.
+#
+# Use this script to download and query USACE survey data, get projection
+# information and tune the parameters until the contours are ready to be pushed
+# :)
 ###################################
+
 function inf  { >&2 printf "\033[34m[+]\033[0m %b\n" "$@" ; }
 function warn { >&2 printf "\033[33m[!]\033[0m %b\n" "$@" ; }
 function err  { >&2 printf "\033[31m[!]\033[0m %b\n" "$@" ; }
@@ -57,17 +65,21 @@ Commands:
 
   Example:
     $ ./$PROCESS download --survey-id JI_01_INL_20250501_CS_5560_60
-    $ ./$PROCESS extract --survey-id JI_01_INL_20250501_CS_5560_60
+    $ ./$PROCESS download --channel-id CENAN_JI_01_INL
+
+    $ ./$PROCESS extract
+
     $ ./$PROCESS preview --survey-id JI_01_INL_20250501_CS_5560_60
     $ ./$PROCESS do --survey-id JI_01_INL_20250501_CS_5560_60
+
+    $ ./$PROCESS crs --survey-id JI_01_INL_20250501_CS_5560_60
+
     $ ./$PROCESS preview --survey-id JI_01_INL_20250501_CS_5560_60 -- --help
     $ ./$PROCESS preview --survey-id JI_01_INL_20250501_CS_5560_60 -- \\
             --grid-res 50 --distance-filter 100
     $ ./$PROCESS do --survey-id JI_01_INL_20250501_CS_5560_60 -- \\
             --grid-res 50 --distance-filter 100 \\
             -o foo.tif
-    $ ./$PROCESS crs --survey-id JI_01_INL_20250501_CS_5560_60
-
 EOF
 }
 
