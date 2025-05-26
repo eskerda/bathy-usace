@@ -174,14 +174,14 @@ function main {
         while read -r line; do
           files+=("surveys/data/$line.XYZ")
         done < <(process_q "surveyjobidpk")
-        python totiff.py ${files[@]} $@ ${_NP_ARGS[@]} --preview
+        python $L_PATH/totiff.py ${files[@]} $@ ${_NP_ARGS[@]} --preview
         ;;
       do)
         files=()
         while read -r line; do
           files+=("surveys/data/$line.XYZ")
         done < <(process_q "surveyjobidpk")
-        python totiff.py ${files[@]} $@ ${_NP_ARGS[@]}
+        python $L_PATH/totiff.py ${files[@]} $@ ${_NP_ARGS[@]}
         ;;
 
       crs)
