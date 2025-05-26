@@ -1,3 +1,4 @@
+import os
 import sys
 import logging
 import argparse
@@ -13,12 +14,14 @@ from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter
 
 
-GRID_RES = 25  # meters
-HULL_ALPHA = 0.01
+GRID_RES = int(os.getenv('GRID_RES', 25))  # meters
+HULL_ALPHA = float(os.getenv('HULL_ALPHA', 0.01))
 HULL_BUFFER = GRID_RES
-G_SMOOTH = 1.3
+G_SMOOTH = float(os.getenv('G_SMOOTH', 1.3))
 # linear, cubic, nearest
-INTP_M = 'nearest'
+INTP_M = os.getenv('INTP_M', 'nearest')
+C_MASK = str(os.getenv('C_MASK', 0)).lower() in ['true', '1']
+D_MASK = str(os.getenv('D_MASK', 1)).lower() in ['true', '1']
 
 log = logging.getLogger("totiff")
 
@@ -161,8 +164,8 @@ if __name__ == "__main__":
     parser.add_argument('--hull-buffer', dest='hull_buffer', default=HULL_BUFFER, type=float)
     parser.add_argument('--g-smooth-sigma', dest='g_smooth', default=G_SMOOTH, type=float)
     parser.add_argument('--interpolate', dest='intp_m', default=INTP_M)
-    parser.add_argument('--concave-mask', dest='c_mask', action='store_true', default=False, help="precise concave mask (slow)")
-    parser.add_argument('--distance-mask', dest='d_mask', action='store_true', default=True, help="distance mask (fast)")
+    parser.add_argument('--concave-mask', dest='c_mask', action='store_true', default=C_MASK, help="precise concave mask (slow)")
+    parser.add_argument('--distance-mask', dest='d_mask', action='store_true', default=D_MASK, help="distance mask (fast)")
     parser.add_argument('-o', dest='outfile', help='output file')
 
     args = parser.parse_args()
