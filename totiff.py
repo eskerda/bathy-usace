@@ -98,6 +98,7 @@ def main(args):
     M_CUTOFF = args.m_cutoff
 
     files = args.files
+    outfile = args.outfile or "output.tif"
 
     log.info("Reading CSV")
     df = pd.concat((naive_read_csv(f, names=["x", "y", "z"]) for f in files))
@@ -160,7 +161,7 @@ def main(args):
     if args.preview:
         return preview(** locals())
 
-    log.info("generating tiff")
+    log.info("generating %s", outfile)
     # Save as GeoTIFF
     xmin, xmax = xi.min(), xi.max()
     ymin, ymax = yi.min(), yi.max()

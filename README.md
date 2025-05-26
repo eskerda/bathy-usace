@@ -244,6 +244,9 @@ npm run dev
 
 ## NOTES
 
+Here I explain why of all the things.
+
+### Useful links
 * https://abelvm.github.io/sql/contour/
 * https://epsg4253.wordpress.com/2013/02/08/building-contour-elevation-lines-with-gdal-and-postgis/
 * https://postgis.net/docs/RT_reference.html
