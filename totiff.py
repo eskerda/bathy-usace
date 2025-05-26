@@ -190,7 +190,7 @@ if __name__ == "__main__":
     parser.add_argument('--interpolate-smooth-sigma', dest='g_smooth', default=G_SMOOTH, type=float)
 
     parser.add_argument('--concave-mask', dest='c_mask', action='store_true', default=C_MASK, help="precise concave mask (slow)")
-    parser.add_argument('--concave-mask-alpha', dest='hull_alpha', default=HULL_ALPHA, type=float)
+    parser.add_argument('--concave-mask-alpha', dest='hull_alpha', default=HULL_ALPHA, type=float, help="1.0 concave - 0.0 convex")
     parser.add_argument('--concave-mask-buffer', dest='hull_buffer', default=HULL_BUFFER, type=float)
 
     parser.add_argument('--distance-mask', dest='d_mask', action='store_true', default=D_MASK, help="distance mask (fast)")
