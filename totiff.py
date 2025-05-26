@@ -119,6 +119,7 @@ def main(args):
     log.info("x min/max: %s %s", df["x"].min(), df["x"].max())
     log.info("y min/max: %s %s", df["y"].min(), df["y"].max())
     log.info("z min/max: %s %s", df["z"].min(), df["z"].max())
+    log.info("Size %s", df.size)
 
     log.info("Interpolating: %s x %s", GRID_RES, GRID_RES)
     # Define grid
