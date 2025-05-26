@@ -9,7 +9,26 @@ pip install -r requirements.txt
 brew install gdal
 ```
 
-## Generate a CSV of USACE surveys feature data from arcgis
+## Quickstart
+
+The following will start dependent services, download a set of sample USACE
+data, generate contours and push them into a postgis instance. Finally open
+the demo website to see the map.
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+make install
+
+docker compose up -d
+make contours
+make push-contours
+open http://localhost:1337
+```
+
+## Usage
+
+### Generate a CSV of USACE surveys feature data from arcgis
 
 Get survey information from USACE arcgis website as CSV.
 
@@ -74,7 +93,7 @@ EOF
 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Download surveys
+### Download surveys
 
 Get a list of URLs from the survey data csv.
 
@@ -108,7 +127,7 @@ python surveys.py -n 10 \
         | parallel --progress -d "\r\n" -j 10 'curl -s -L --create-dirs -o surveys/{/} {}'
 ```
 
-## Visualize XYZ USACE survey
+### Visualize XYZ USACE survey
 
 This part is useful to inspect the data and make some sense out of it using
 pandas and matplotlib
@@ -121,7 +140,7 @@ python totiff.py JI_01_INL_20250501_CS_5560_60.XYZ --preview
 <img width="531" alt="image" src="https://github.com/user-attachments/assets/7ff42af1-883b-474e-baba-c7e14f0cdca2" />
 
 
-## Generate a tiff out of a XYZ USACE survey
+### Generate a tiff out of a XYZ USACE survey
 
 
 ```bash
@@ -134,7 +153,7 @@ Multiple XYZ files can be processed by
 python totiff.py *.XYZ
 ```
 
-## Generate contours using gdal
+### Generate contours using gdal
 
 ```bash
 gdal_contour -a depth \
@@ -147,7 +166,7 @@ gdal_contour -amin depth_min -amax depth_max \
              output.tif out_poly.shp
 ```
 
-## Visualize tiff and contours
+### Visualize tiff and contours
 
 ```bash
 python tiffpl.py output.tif out_lines.shp
@@ -155,9 +174,9 @@ python tiffpl.py output.tif out_lines.shp
 
 <img width="698" alt="image" src="https://github.com/user-attachments/assets/a21d5c7a-ceb6-4dda-beac-df959dcc41a2" />
 
-## Contours in PostGIS
+### Contours in PostGIS
 
-### Run a postgis instance
+#### Run a postgis instance
 
 ```bash
 docker run --rm -it \
@@ -177,7 +196,7 @@ cd docker-postgis/17-master
 docker build -t local/postgis .
 ```
 
-### Store contours in postgis
+#### Store contours in postgis
 
 ```bash
 ogr2ogr -f "PostgreSQL" PG:"host=localhost dbname=orca user=postgres" \
@@ -192,7 +211,7 @@ ogr2ogr -f "PostgreSQL" PG:"host=localhost dbname=orca user=postgres" \
 
 ## Run www map visualization
 
-### Start martin for tile serving
+#### Start martin for tile serving
 
 ```bash
 docker run -p 3000:3000 -e RUST_LOG=debug \
@@ -202,7 +221,7 @@ docker run -p 3000:3000 -e RUST_LOG=debug \
            ghcr.io/maplibre/martin
 ```
 
-### Build website and serve
+#### Build website and serve
 
 ```bash
 cd www
