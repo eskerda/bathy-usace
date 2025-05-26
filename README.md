@@ -54,7 +54,7 @@ python surveys.py -n 10 \
 
 [arcgisq]: https://developers.arcgis.com/documentation/portal-and-data-services/data-services/feature-services/query-features/
 
-## Query relevant survey information
+### Query relevant survey information
 
 ```bash
 duckdb << EOF
@@ -338,6 +338,50 @@ Start a development server with
 
 ```bash
 npm run dev
+```
+
+### process.sh
+
+This script ties together the whole pipeline in a single place. It can be
+used to download and extract USACE surveys, preview the information, query
+CRS and generate the shapefiles.
+
+```bash
+           process.sh: USACE to WWW
+
+Usage: process.sh action [options...]
+
+Options:
+  -V, --verbose     echo every command that gets executed
+  --channel-id      filter by channel id (ex: CENAN_JI_01_INL)
+  --survey-id       filter by survey id (ex: JI_01_INL_20250501_CS_5560_60)
+  --                stop reading arguments
+  -h, --help        display this help
+
+Commands:
+  help                            Show usage
+  download                        Download surveys (based on filters)
+  extract                         Extract survey data
+  preview                         Generate a preview of survey data
+  crs                             Get CRS used in survey as EPSG
+
+  Example:
+    $ ./process.sh download --survey-id JI_01_INL_20250501_CS_5560_60
+    $ ./process.sh download --channel-id CENAN_JI_01_INL
+
+    $ ./process.sh extract
+
+    $ ./process.sh preview --survey-id JI_01_INL_20250501_CS_5560_60
+    $ ./process.sh do --survey-id JI_01_INL_20250501_CS_5560_60
+
+    $ ./process.sh crs --survey-id JI_01_INL_20250501_CS_5560_60
+
+    $ ./process.sh preview --survey-id JI_01_INL_20250501_CS_5560_60 -- --help
+    $ ./process.sh preview --survey-id JI_01_INL_20250501_CS_5560_60 -- \
+            --grid-res 50 --distance-filter 100
+    $ ./process.sh do --survey-id JI_01_INL_20250501_CS_5560_60 -- \
+            --grid-res 50 --distance-filter 100 \
+            -o foo.tif
 ```
 
 ## NOTES

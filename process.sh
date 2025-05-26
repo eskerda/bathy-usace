@@ -58,6 +58,7 @@ Options:
 
 Commands:
   help                            Show usage
+  populate                        Populate surveys csv file
   download                        Download surveys (based on filters)
   extract                         Extract survey data
   preview                         Generate a preview of survey data
