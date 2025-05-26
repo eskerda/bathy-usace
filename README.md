@@ -153,7 +153,7 @@ gdal_contour -amin depth_min -amax depth_max \
 python tiffpl.py output.tif out_lines.shp
 ```
 
-<img width="698" alt="image" src="https://github.com/user-attachments/assets/754ff612-9e29-4945-8091-a45585481407" />
+<img width="698" alt="image" src="https://github.com/user-attachments/assets/a21d5c7a-ceb6-4dda-beac-df959dcc41a2" />
 
 ## Contours in PostGIS
 
