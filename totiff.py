@@ -58,6 +58,30 @@ def preview(df, xi, yi, zi, args, ** kwargs):
         plt.show()
 
 
+def concave_mask(xys, xyi):
+    """ Generates a mask based on the concave hull of scattered points """
+    from alphashape import alphashape
+
+    hull = alphashape(xys, HULL_ALPHA)
+    mask = shapely.contains(hull.buffer(HULL_BUFFER), shapely.points(xyi))
+
+    return mask
+
+def distance_mask(xys, xyi):
+    """ Generates a mask based on the distance to nearest point """
+    from scipy.spatial import cKDTree
+    tree = cKDTree(xys)
+    dist, _ = tree.query(xyi)
+
+    # XXX tune these params
+    # XXX make this proportional to point density
+    mask = dist < HULL_BUFFER * 2
+    # Smooth mask to fill in distance holes
+    mask = gaussian_filter(mask.astype(float), sigma=1.5) > 0.3
+
+    return mask
+
+
 def main(args):
     GRID_RES = args.grid_res
     HULL_ALPHA = args.hull_alpha
@@ -69,17 +93,16 @@ def main(args):
     df = pd.concat((naive_read_csv(f, names=["x", "y", "z"]) for f in files))
     dupes = df.duplicated(subset=['x', 'y'], keep=False)
     if dupes.any():
+        # XXX what should we do with duplicates, mean, min, max?
         warn(f"Found {dupes.sum()} dupes in dataset, averaging")
-        # warn on duplicates, get min
-        df = df.groupby(['x', 'y'], as_index=False).mean()
-        # Or get min
-        # df = df.groupby(['x', 'y'], as_index=False).agg({'z': 'min'})
+        df = df.groupby(['x', 'y'], as_index=False).agg({'z': 'mean'})
 
     print("Interpolating")
     # feet to meters
     df["z"] = df["z"] * 0.3048
     print("x min/max:", df["x"].min(), df["x"].max())
     print("y min/max:", df["y"].min(), df["y"].max())
+    print("z min/max:", df["z"].min(), df["z"].max())
 
     # Define grid
     xi = np.arange(df["x"].min(), df["x"].max(), GRID_RES)
@@ -88,66 +111,18 @@ def main(args):
 
     # Interpolate
     zi = griddata((df["x"], df["y"]), df["z"], (xi, yi), method=args.intp_m)
-
     # Apply Gaussian smoothing
     zi = gaussian_filter(zi, sigma=G_SMOOTH)
 
-    # MASKING #########################################################
-    # This is the slowest step that I NEED TO FIX
-
-    print("masking")
-
-    # XXX move these to functions
-    if args.c_mask:
-        # SLOW
-        warn("concave mask filtering is slow, wait")
-
-        import alphashape
-        # Create alpha shape (concave hull)
-        print("Calculating alpha shape")
-        hull = alphashape.alphashape(df[["x", "y"]].values, HULL_ALPHA)
-
-        # Flatten the grid coordinates
-        # Grid coordinates
-        grid_points = np.c_[xi.ravel(), yi.ravel()]
-        print("Generating mask")
-        mask = shapely.contains(hull.buffer(HULL_BUFFER), shapely.points(grid_points))
-        # 2D mask
+    if any([args.c_mask, args.d_mask]):
+        if args.c_mask:
+            warn("concave mask filtering is slow, wait")
+            mask = concave_mask(df[["x", "y"]].values, np.c_[xi.ravel(), yi.ravel()])
+        elif args.d_mask:
+            mask = distance_mask(df[["x", "y"]].values, np.c_[xi.ravel(), yi.ravel()])
         mask = mask.reshape(xi.shape)
-        # smoothed = gaussian_filter(mask.astype(float), sigma=2)
-        # # Threshold to get back to binary
-        # mask = smoothed > 0.1
-    else:
-        # FAST
-        # Build KDTree from input
-        from scipy.spatial import cKDTree
-
-        # Scattered input points
-        xy = df[['x', 'y']].values
-
-        # Grid coordinates
-        grid_points = np.c_[xi.ravel(), yi.ravel()]
-
-        # Scattered input points
-        xy = df[['x', 'y']].values
-        tree = cKDTree(xy)
-
-        # Query: what's the distance to nearest input point?
-        dist, _ = tree.query(grid_points)
-
-        # These need to be tuned for clean lines
-
-        # XXX make this proportional to point density
-        valid = dist < HULL_BUFFER * 2
-
-        mask = valid.reshape(xi.shape)
-
-        # XXX tune post-filter
-        soft_mask = gaussian_filter(mask.astype(float), sigma=1.5)
-        mask = soft_mask > 0.3
-
-    print("Masking masking")
-    zi = np.where(mask, zi, np.nan)
+        print("Applying mask")
+        zi = np.where(mask, zi, np.nan)
 
     if args.preview:
         return preview(** locals())
@@ -184,7 +159,8 @@ if __name__ == "__main__":
     parser.add_argument('--hull-buffer', dest='hull_buffer', default=HULL_BUFFER, type=float)
     parser.add_argument('--g-smooth-sigma', dest='g_smooth', default=G_SMOOTH, type=float)
     parser.add_argument('--interpolate', dest='intp_m', default=INTP_M)
-    parser.add_argument('--concave-mask', dest='c_mask', action='store_true', default=False)
+    parser.add_argument('--concave-mask', dest='c_mask', action='store_true', default=False, help="precise concave mask (slow)")
+    parser.add_argument('--distance-mask', dest='d_mask', action='store_true', default=True, help="distance mask (fast)")
     parser.add_argument('-o', dest='outfile', help='output file')
 
     args = parser.parse_args()
