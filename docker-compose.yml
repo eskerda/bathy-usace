@@ -1,6 +1,6 @@
 services:
   postgis:
-    image: local/postgis
+    image: postgis/postgis
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_DB: orca

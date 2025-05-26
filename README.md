@@ -190,14 +190,16 @@ docker run --rm -it \
 ```
 
 > **_NOTE:_**  postgis still has no arm64 image available so on apple silicon
-> you will need to build the image locally. Make sure to increase the docker
+> you will need to [build the image][postgis-docker-repo] locally. Make sure to increase the docker
 > memory limit when building.
 
 ```bash
 git clone git@github.com:postgis/docker-postgis.git
 cd docker-postgis/17-master
-docker build -t local/postgis .
+docker build -t postgis/postgis .
 ```
+
+[postgis-docker-repo]: https://github.com/postgis/docker-postgis
 
 #### Store contours in postgis
 
