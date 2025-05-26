@@ -142,6 +142,12 @@ python totiff.py JI_01_INL_20250501_CS_5560_60.XYZ --preview
 
 <img width="531" alt="image" src="https://github.com/user-attachments/assets/7ff42af1-883b-474e-baba-c7e14f0cdca2" />
 
+On sparse data, it's important to tweak parameters to properly get a mask,
+either by increasing the distance filter or by using a hull. On these cases
+generally a convex hull works better since a concave hull will result in
+overfitting into a weird shape.
+
+For full usage, see `python totiff.py --help`
 
 ### Generate a tiff out of a XYZ USACE survey
 
@@ -244,7 +250,23 @@ npm run dev
 
 ## NOTES
 
-Here I explain why of all the things.
+The scripts on this repo are meant to be used and tweaked on selected surveys.
+For most of the parts, there's a --preview counterpart that helps exploring the
+dataset and tweaking parameters to get appropiate contour lines, depending on
+the density of the survey and the quality of the data.
+
+Ideally there would be less work done in `pandas` and `gdal_` locally, and
+instead leverage native postgis functions and the `gdal` extension. Still I
+think it's very useful to graph and visualize the information to get a feel of
+it.
+
+In general, the pipe looks like:
+
+* Collect metadata (surveys.csv)
+* Query surveys.csv and download desired .ZIP from USACE
+* Preview the information and tweak parameters
+* Generate a tiff file and generate contours using gdal
+* Push contours to postgis
 
 ### Useful links
 * https://abelvm.github.io/sql/contour/
