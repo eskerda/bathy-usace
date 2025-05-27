@@ -18,6 +18,7 @@ map.on('click', (ev) => {
 map.on('load', () => {
   const waterLayer = 'water_intermittent'
   console.log(map.getStyle().layers)
+
    map.addSource('bathy', {
      type: 'vector',
      tiles: ['http://localhost:3000/bathy/{z}/{x}/{y}'],
@@ -34,6 +35,31 @@ map.on('load', () => {
     }
   }, waterLayer)
 
+  map.addLayer({
+    id: 'labels',
+    type: 'symbol',
+    source: 'bathy',
+    'source-layer': 'bathy',
+    layout: {
+      "symbol-placement": "line",
+      // WTF
+      // https://docs.mapbox.com/style-spec/reference/layers/#symbol
+      // https://docs.mapbox.com/style-spec/reference/expressions/#types-format
+      "text-field": ["format",
+          ['to-string', ['abs', ['floor', ['to-number', ['get', 'depth']]]]], {},
+          " m", {},
+      ],
+      "text-font": ["Noto Sans Regular"],
+      "symbol-spacing": 500,
+      "text-size": 12,
+      "text-anchor": "bottom",
+    },
+    paint: {
+      "text-color": "#000",
+      "text-halo-color": "#ffffff",
+      "text-halo-width": 1,
+    }
+  })
 
   map.addSource('bathy_pol', {
     type: 'vector',
