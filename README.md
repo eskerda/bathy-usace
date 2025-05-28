@@ -20,9 +20,10 @@ python3 -m venv venv
 source venv/bin/activate
 make install
 
-docker compose up -d
 make contours
+docker compose up -d postgis
 make push-contours
+docker compose up -d
 open http://localhost:1337
 ```
 
